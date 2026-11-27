@@ -1,0 +1,15 @@
+{
+  "name": "teto",
+  "version": "1.0.0",
+  "description": "Simulador de financiamento imobiliário SAC x Price com cena 3D",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "author": "Matheus Galvão",
+  "license": "MIT"
+}

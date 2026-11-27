@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teto</title>
+<meta name="description" content="Simulador de financiamento imobiliário que compara SAC e Price, com cena 3D, gráficos e tabela mês a mês.">
+<meta name="theme-color" content="#070b18">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://teto-matheus.vercel.app/">
+<meta property="og:title" content="Teto · Quanto do seu imóvel já é seu?">
+<meta property="og:description" content="Compare SAC e Price lado a lado e veja, janela por janela, o financiamento virar casa própria.">
+<meta property="og:image" content="https://teto-matheus.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070b18'/%3E%3Cpath d='M5 15 16 6l11 9' fill='none' stroke='%23ffb547' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='9' y='15' width='14' height='11' rx='2' fill='none' stroke='%23e8ecf8' stroke-width='2.2'/%3E%3Crect x='13.5' y='18.5' width='5' height='4' rx='1' fill='%23ffb547'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Conceito: noite na cidade. A cena 3D é a vitrine; o resto é vidro escuro iluminado por luz de janela. */
+:root {
+  color-scheme: dark;
+  --noite: #070b18;
+  --noite-2: #0c1329;
+  --painel: rgba(16, 25, 52, 0.72);
+  --painel-forte: rgba(21, 32, 66, 0.9);
+  --linha: rgba(150, 172, 255, 0.16);
+  --linha-forte: rgba(150, 172, 255, 0.3);
+  --texto: #e8ecf8;
+  --texto-2: #a6b1ce;
+  --texto-3: #74809f;
+  --luz: #ffb547;
+  --luz-suave: #ffd796;
+  --entrada: #bfe9ff;
+  --apagada: #1c2747;
+  --sac: #2ea3e6;
+  --price: #f2734e;
+  --ok: #4fd1a0;
+  --erro: #ff7a87;
+  --f-display: "Unbounded", "Segoe UI", system-ui, sans-serif;
+  --f-texto: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --raio: 18px;
+  --raio-sm: 10px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+body {
+  margin: 0;
+  background: var(--noite);
+  background-image:
+    radial-gradient(1100px 620px at 78% -8%, rgba(70, 90, 220, 0.28), transparent 60%),
+    radial-gradient(800px 500px at -10% 20%, rgba(46, 163, 230, 0.12), transparent 60%),
+    radial-gradient(900px 600px at 50% 110%, rgba(255, 181, 71, 0.07), transparent 60%);
+  background-attachment: fixed;
+  color: var(--texto);
+  font: 400 16px/1.55 var(--f-texto);
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--noite);
+}
+
+a { color: var(--luz-suave); }
+a:hover { color: var(--luz); }
+:focus-visible { outline: 2px solid var(--luz); outline-offset: 3px; border-radius: 6px; }
+
+.largura {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- topo ---------- */
+.topo {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: rgba(7, 11, 24, 0.72);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--linha);
+}
+.topo .largura { display: flex; align-items: center; gap: 24px; padding-block: 14px; }
+.marca { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texto); font: 700 22px/1 var(--f-display); letter-spacing: -0.02em; }
+.marca svg { width: 30px; height: 30px; }
+.nav { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+.nav a { color: var(--texto-2); text-decoration: none; font-size: 14px; font-weight: 500; padding: 6px 12px; border-radius: 999px; }
+.nav a:hover { color: var(--texto); background: rgba(150, 172, 255, 0.08); }
+@media (max-width: 760px) { .nav { display: none; } }
+
+/* ---------- hero ---------- */
+.hero { padding-block: 44px 28px; }
+.sobrelinha { font: 600 12px/1 var(--f-num); letter-spacing: 0.14em; text-transform: uppercase; color: var(--luz); display: inline-flex; align-items: center; gap: 10px; }
+.sobrelinha::before { content: ""; width: 22px; height: 2px; background: var(--luz); box-shadow: 0 0 12px var(--luz); }
+h1 {
+  font: 700 clamp(34px, 5.4vw, 68px)/1.04 var(--f-display);
+  letter-spacing: -0.035em; margin: 18px 0 16px; max-width: 15ch; text-wrap: balance;
+}
+h1 em { font-style: normal; color: var(--luz); text-shadow: 0 0 28px rgba(255, 181, 71, 0.45); }
+.hero-sub { color: var(--texto-2); font-size: clamp(16px, 1.6vw, 19px); max-width: 56ch; margin: 0; }
+
+.hero-grade { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 22px; margin-top: 34px; align-items: start; }
+@media (max-width: 920px) { .hero-grade { grid-template-columns: minmax(0, 1fr); } .palco { order: -1; } }
+
+.painel {
+  background: var(--painel);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ---------- formulário ---------- */
+.form { padding: 22px; display: grid; gap: 18px; }
+.form-titulo { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.form-titulo h2 { font: 600 16px/1.2 var(--f-display); margin: 0; letter-spacing: -0.01em; }
+.etiqueta-exemplo { font: 500 11px/1 var(--f-num); color: var(--texto-3); border: 1px solid var(--linha); padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+.campo { display: grid; gap: 8px; }
+.campo label, .campo .rotulo-campo { font-size: 13px; font-weight: 600; color: var(--texto-2); display: flex; justify-content: space-between; gap: 8px; }
+.campo label output, .campo .ajuda { font: 500 12px/1.3 var(--f-num); color: var(--texto-3); }
+.entrada-moeda { position: relative; }
+.entrada-moeda span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font: 500 14px var(--f-num); color: var(--texto-3); pointer-events: none; }
+.entrada-moeda.sufixo span { left: auto; right: 14px; }
+input[type="text"] {
+  width: 100%; min-width: 0;
+  background: rgba(5, 9, 22, 0.6);
+  border: 1px solid var(--linha);
+  color: var(--texto);
+  font: 500 17px/1 var(--f-num);
+  font-variant-numeric: tabular-nums;
+  padding: 13px 14px 13px 42px;
+  border-radius: var(--raio-sm);
+  transition: border-color .2s, box-shadow .2s;
+}
+.entrada-moeda.sufixo input { padding-left: 14px; padding-right: 76px; }
+input[type="text"]:hover { border-color: var(--linha-forte); }
+input[type="text"]:focus { outline: none; border-color: var(--luz); box-shadow: 0 0 0 3px rgba(255, 181, 71, 0.18); }
+.duas-colunas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.duas-colunas input[type="text"] { font-size: 15px; padding-left: 38px; }
+@media (max-width: 380px) { .duas-colunas { grid-template-columns: 1fr; } }
+
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; background: transparent; cursor: pointer; margin: 0; }
+input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; background: linear-gradient(90deg, var(--luz) var(--p, 50%), var(--apagada) var(--p, 50%)); }
+input[type="range"]::-moz-range-track { height: 6px; border-radius: 99px; background: var(--apagada); }
+input[type="range"]::-moz-range-progress { height: 6px; border-radius: 99px; background: var(--luz); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: var(--luz-suave); border: 3px solid var(--noite); box-shadow: 0 0 0 2px var(--luz), 0 0 18px rgba(255, 181, 71, 0.6); }
+input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--luz-suave); border: 3px solid var(--noite); box-shadow: 0 0 0 2px var(--luz), 0 0 18px rgba(255, 181, 71, 0.6); }
+
+.avancado { border-top: 1px dashed var(--linha); padding-top: 16px; display: grid; gap: 10px; }
+.avancado p { margin: 0; font-size: 12.5px; color: var(--texto-3); }
+.erros { margin: 0; padding: 12px 14px 12px 32px; border-radius: var(--raio-sm); background: rgba(255, 122, 135, 0.1); border: 1px solid rgba(255, 122, 135, 0.4); color: var(--erro); font-size: 14px; }
+body.com-erro .resultados { opacity: 0.45; filter: saturate(0.5); transition: opacity .2s; }
+
+/* ---------- palco 3D ---------- */
+.palco { padding: 0; overflow: hidden; display: grid; }
+.cena { position: relative; height: clamp(340px, 48vw, 500px); overflow: hidden; border-radius: var(--raio) var(--raio) 0 0;
+  background: radial-gradient(70% 70% at 50% 35%, rgba(60, 80, 190, 0.25), transparent 70%); }
+.cena canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cena-topo { position: absolute; top: 16px; left: 18px; right: 18px; display: flex; justify-content: space-between; gap: 12px; pointer-events: none; z-index: 2; }
+.cena-topo .sobrelinha { font-size: 11px; }
+.legenda-cena { display: flex; gap: 14px; flex-wrap: wrap; justify-content: flex-end; font: 500 11.5px/1 var(--f-num); color: var(--texto-2); }
+.legenda-cena span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda-cena i { width: 12px; height: 9px; border-radius: 2px; display: inline-block; }
+.i-entrada { background: var(--entrada); }
+.i-paga { background: var(--luz); box-shadow: 0 0 8px var(--luz); }
+.i-falta { background: var(--apagada); border: 1px solid var(--linha-forte); }
+@media (max-width: 560px) { .cena-topo { flex-direction: column; } .legenda-cena { justify-content: flex-start; } }
+
+.rotulo {
+  position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;
+  display: none; align-items: baseline; gap: 8px;
+  padding: 7px 12px; border-radius: 999px;
+  background: rgba(7, 11, 24, 0.78); border: 1px solid var(--linha-forte);
+  font: 700 13px/1 var(--f-display); white-space: nowrap;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.rotulo .rotulo-pct { font: 600 13px/1 var(--f-num); color: var(--luz-suave); }
+.rotulo.s-sac { box-shadow: inset 3px 0 0 var(--sac); }
+.rotulo.s-price { box-shadow: inset 3px 0 0 var(--price); }
+.cena-3d-ok .rotulo { display: inline-flex; }
+
+/* versão 2D: aparece enquanto o 3D carrega e fica se o 3D não carregar */
+.torres-2d { position: absolute; inset: 76px 0 40px; display: flex; justify-content: center; align-items: flex-end; gap: 56px; transition: opacity .6s; }
+.cena-3d-ok .torres-2d { opacity: 0; pointer-events: none; }
+.torre-2d { display: grid; gap: 10px; justify-items: center; font: 700 13px var(--f-display); }
+.torre-2d .corpo { width: 86px; height: clamp(180px, 30vw, 320px); border: 1px solid var(--linha-forte); border-radius: 6px 6px 0 0; position: relative; overflow: hidden;
+  background: repeating-linear-gradient(0deg, var(--apagada) 0 10px, transparent 10px 14px), var(--noite-2); }
+.torre-2d .corpo::after, .torre-2d .corpo::before { content: ""; position: absolute; inset: auto 0 0; transition: height .3s; }
+.torre-2d .corpo::after { height: calc(var(--f, 0) * 100%); background: var(--luz); box-shadow: 0 0 24px rgba(255, 181, 71, 0.5); opacity: 0.9; }
+.torre-2d .corpo::before { height: calc(var(--frac-entrada, 0) * 100%); background: var(--entrada); z-index: 1; }
+#barra-sac { border-color: var(--sac); }
+#barra-price { border-color: var(--price); }
+.aviso-3d { position: absolute; bottom: 12px; padding-inline: 16px; left: 0; right: 0; text-align: center; font-size: 12px; color: var(--texto-3); display: none; }
+.cena-sem-3d .aviso-3d { display: block; }
+.cena-sem-3d .torres-2d { bottom: 66px; }
+
+.linha-tempo { padding: 18px 20px 20px; border-top: 1px solid var(--linha); display: grid; gap: 14px; background: var(--painel-forte); border-radius: 0 0 var(--raio) var(--raio); }
+.tempo-cabeca { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.botao-play {
+  display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
+  background: var(--luz); color: #1a1205; border: 0; border-radius: 999px;
+  padding: 10px 16px 10px 12px; font: 700 13px/1 var(--f-texto);
+  box-shadow: 0 8px 24px -8px rgba(255, 181, 71, 0.7);
+  transition: transform .15s, box-shadow .15s;
+}
+.botao-play:hover { transform: translateY(-1px); box-shadow: 0 12px 28px -8px rgba(255, 181, 71, 0.85); }
+.botao-play svg { width: 18px; height: 18px; }
+.botao-play[aria-pressed="true"] .ic-play, .botao-play[aria-pressed="false"] .ic-pausa { display: none; }
+.tempo-saida { font: 600 15px/1 var(--f-num); font-variant-numeric: tabular-nums; margin-left: auto; color: var(--texto); }
+.leituras { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.leitura { display: grid; gap: 3px; padding: 10px 12px; border-radius: var(--raio-sm); background: rgba(5, 9, 22, 0.5); border: 1px solid var(--linha); }
+.leitura-nome { font: 700 12px/1.2 var(--f-display); display: flex; align-items: center; gap: 7px; }
+.leitura-pct { font: 600 20px/1.2 var(--f-num); color: var(--luz-suave); font-variant-numeric: tabular-nums; }
+.leitura-saldo { font: 500 12.5px/1.2 var(--f-num); color: var(--texto-2); font-variant-numeric: tabular-nums; }
+.ponto { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.ponto.s-sac { background: var(--sac); }
+.ponto.s-price { background: var(--price); }
+
+/* ---------- seções ---------- */
+.secao { padding-block: 56px 8px; }
+.secao-cabeca { display: grid; gap: 10px; margin-bottom: 26px; max-width: 70ch; }
+h2.titulo-secao { font: 700 clamp(24px, 3vw, 34px)/1.12 var(--f-display); letter-spacing: -0.03em; margin: 0; text-wrap: balance; }
+.secao-cabeca p { margin: 0; color: var(--texto-2); }
+
+.veredito { padding: 26px 28px; display: grid; gap: 8px; margin-bottom: 18px;
+  background: linear-gradient(120deg, rgba(255, 181, 71, 0.13), rgba(255, 181, 71, 0.02) 55%), var(--painel); border-color: rgba(255, 181, 71, 0.3); }
+.veredito p { margin: 0; }
+#veredito { font: 600 clamp(19px, 2.3vw, 26px)/1.3 var(--f-display); letter-spacing: -0.02em; text-wrap: balance; }
+#veredito strong { color: var(--luz); font-weight: 700; }
+#veredito-detalhe, #nota-extra { color: var(--texto-2); }
+#nota-extra { font-size: 14px; color: var(--luz-suave); }
+
+.cartoes { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 760px) { .cartoes { grid-template-columns: minmax(0, 1fr); } }
+.cartao { padding: 22px 24px; display: grid; gap: 16px; align-content: start; }
+.cartao-cabeca { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cartao-cabeca h3 { margin: 0; font: 700 20px/1 var(--f-display); display: flex; align-items: center; gap: 10px; }
+.cartao-cabeca h3 .ponto { width: 12px; height: 12px; box-shadow: 0 0 12px currentColor; }
+#card-sac .ponto { color: var(--sac); }
+#card-price .ponto { color: var(--price); }
+.cartao-cabeca small { color: var(--texto-3); font-size: 13px; flex-basis: 100%; }
+.selos { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.selo { font: 600 11px/1 var(--f-num); padding: 6px 9px; border-radius: 999px; color: var(--ok); background: rgba(79, 209, 160, 0.1); border: 1px solid rgba(79, 209, 160, 0.35); }
+.metricas { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--linha); border-radius: var(--raio-sm); overflow: hidden; margin: 0; }
+.metricas div { background: var(--noite-2); padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.metricas dt { font-size: 12px; color: var(--texto-3); font-weight: 500; }
+.metricas dd { margin: 0; font: 600 17px/1.25 var(--f-num); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+@media (max-width: 400px) { .metricas dd { font-size: 15px; } }
+
+/* ---------- gráficos ---------- */
+.graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 900px) { .graficos { grid-template-columns: minmax(0, 1fr); } }
+.grafico-cartao { padding: 20px 20px 14px; display: grid; gap: 10px; min-width: 0; }
+.grafico-cartao header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.grafico-cartao h3 { margin: 0; font: 600 15px/1.2 var(--f-display); }
+.legenda { display: flex; gap: 14px; font: 500 12px/1 var(--f-num); color: var(--texto-2); }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda i { width: 14px; height: 2px; border-radius: 2px; display: inline-block; }
+.legenda .s-sac { background: var(--sac); }
+.legenda .s-price { background: var(--price); }
+.grafico { position: relative; min-width: 0; }
+.grafico-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.grafico-grade line { stroke: var(--linha); stroke-width: 1; }
+.grafico-eixo { fill: var(--texto-3); font: 500 11px var(--f-num); }
+.grafico-linha { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.grafico-linha.s-sac { stroke: var(--sac); }
+.grafico-linha.s-price { stroke: var(--price); }
+.grafico-rotulo { fill: var(--texto); font: 700 12px var(--f-display); paint-order: stroke; stroke: var(--noite-2); stroke-width: 4px; }
+.grafico-marca line { stroke: var(--luz); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: 0.8; }
+.grafico-cruz { stroke: var(--texto-2); stroke-width: 1; }
+.grafico-ponto { stroke: var(--noite-2); stroke-width: 2; }
+.grafico-ponto.s-sac { fill: var(--sac); }
+.grafico-ponto.s-price { fill: var(--price); }
+.grafico-dica { position: absolute; top: 6px; min-width: 180px; padding: 10px 12px; border-radius: var(--raio-sm); background: rgba(7, 11, 24, 0.94); border: 1px solid var(--linha-forte); pointer-events: none; font-size: 13px; display: grid; gap: 6px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
+.dica-titulo { font: 600 12px var(--f-num); color: var(--texto-2); }
+.dica-linha { display: flex; align-items: center; gap: 8px; }
+.dica-linha b { margin-left: auto; font: 600 13px var(--f-num); font-variant-numeric: tabular-nums; }
+.dica-cor { width: 10px; height: 10px; border-radius: 50%; }
+.dica-cor.s-sac { background: var(--sac); }
+.dica-cor.s-price { background: var(--price); }
+
+/* ---------- tabela ---------- */
+.tabela-barra { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--linha); }
+.segmentado { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(5, 9, 22, 0.6); border: 1px solid var(--linha); }
+.segmentado button { border: 0; background: transparent; color: var(--texto-2); font: 600 13px/1 var(--f-texto); padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+.segmentado button[aria-pressed="true"] { background: var(--texto); color: var(--noite); }
+.botao-sec { margin-left: auto; border: 1px solid var(--linha-forte); background: transparent; color: var(--texto); font: 600 13px/1 var(--f-texto); padding: 10px 14px; border-radius: 999px; cursor: pointer; }
+.botao-sec:hover { border-color: var(--luz); color: var(--luz-suave); }
+#copia-aviso { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--ok); min-height: 1em; }
+#copia-aviso:empty { display: none; }
+.tabela-rolagem { max-height: 460px; overflow: auto; }
+table { width: 100%; border-collapse: collapse; font: 500 14px/1.3 var(--f-num); font-variant-numeric: tabular-nums; }
+caption { text-align: left; padding: 12px 18px 0; color: var(--texto-3); font: 500 12px var(--f-texto); caption-side: top; }
+thead th { position: sticky; top: 0; background: var(--painel-forte); color: var(--texto-2); font: 600 12px/1.2 var(--f-texto); text-align: right; padding: 12px 18px; border-bottom: 1px solid var(--linha-forte); white-space: nowrap; }
+thead th:first-child, tbody th { text-align: left; }
+tbody th, tbody td { padding: 10px 18px; border-bottom: 1px solid var(--linha); white-space: nowrap; }
+tbody td { text-align: right; }
+tbody th { font-weight: 600; color: var(--texto-2); }
+tbody tr:hover { background: rgba(255, 181, 71, 0.05); }
+
+/* ---------- como funciona ---------- */
+.explica { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 900px) { .explica { grid-template-columns: minmax(0, 1fr); } }
+.explica article { padding: 22px; display: grid; gap: 12px; align-content: start; }
+.explica h3 { margin: 0; font: 600 17px/1.2 var(--f-display); display: flex; align-items: center; gap: 10px; }
+.explica p, .explica li { margin: 0; color: var(--texto-2); font-size: 15px; }
+.explica ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.formula { font: 500 14px/1.6 var(--f-num); color: var(--luz-suave); background: rgba(5, 9, 22, 0.6); border: 1px solid var(--linha); border-radius: var(--raio-sm); padding: 12px 14px; overflow-x: auto; white-space: nowrap; }
+
+/* ---------- rodapé ---------- */
+.rodape { margin-top: 64px; border-top: 1px solid var(--linha); }
+.rodape .largura { padding-block: 28px 40px; display: flex; gap: 16px 32px; flex-wrap: wrap; justify-content: space-between; color: var(--texto-3); font-size: 14px; }
+.rodape p { margin: 0; max-width: 60ch; }
+
+/* entrada suave das seções (estado final visível sem JS) */
+@keyframes subir { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.hero > .largura > * { animation: subir .7s cubic-bezier(.2, .7, .2, 1) both; }
+.hero > .largura > *:nth-child(2) { animation-delay: .06s; }
+.hero > .largura > *:nth-child(3) { animation-delay: .12s; }
+.hero > .largura > *:nth-child(4) { animation-delay: .2s; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="largura">
+    <a class="marca" href="#simulador" aria-label="Teto, início">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 15 16 4l13 11" fill="none" stroke="#ffb547" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="15" width="16" height="13" rx="2" fill="none" stroke="#e8ecf8" stroke-width="2.4"/><rect x="13" y="19" width="6" height="5" rx="1" fill="#ffb547"/></svg>
+      teto
+    </a>
+    <nav class="nav" aria-label="Seções">
+      <a href="#comparacao">Comparação</a>
+      <a href="#graficos">Gráficos</a>
+      <a href="#tabela-secao">Tabela</a>
+      <a href="#como-funciona">Como funciona</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="simulador">
+    <div class="largura">
+      <span class="sobrelinha">Simulador de financiamento imobiliário</span>
+      <h1>Quanto do seu imóvel <em>já é seu?</em></h1>
+      <p class="hero-sub">Compare SAC e Price lado a lado e veja, janela por janela, o financiamento virar casa própria.</p>
+
+      <div class="hero-grade">
+        <form id="form" class="painel form" novalidate>
+          <div class="form-titulo">
+            <h2>Seu financiamento</h2>
+            <span class="etiqueta-exemplo">valores de exemplo</span>
+          </div>
+
+          <div class="campo">
+            <label for="valor-imovel">Valor do imóvel</label>
+            <div class="entrada-moeda"><span>R$</span><input id="valor-imovel" type="text" inputmode="decimal" autocomplete="off" value="400.000"></div>
+          </div>
+
+          <div class="campo">
+            <label for="entrada">Entrada <output id="entrada-pct-saida" for="entrada-pct">20% do imóvel</output></label>
+            <div class="entrada-moeda"><span>R$</span><input id="entrada" type="text" inputmode="decimal" autocomplete="off" value="80.000"></div>
+            <input id="entrada-pct" type="range" min="0" max="90" step="1" value="20" aria-label="Entrada em porcentagem do imóvel">
+          </div>
+
+          <div class="campo">
+            <label for="prazo">Prazo <output id="prazo-saida" for="prazo">30 anos · 360 meses</output></label>
+            <input id="prazo" type="range" min="5" max="35" step="1" value="30">
+          </div>
+
+          <div class="campo">
+            <label for="taxa">Taxa de juros <output id="taxa-mensal" for="taxa">≈ 0,91% ao mês</output></label>
+            <div class="entrada-moeda sufixo"><input id="taxa" type="text" inputmode="decimal" autocomplete="off" value="11,5"><span>% ao ano</span></div>
+          </div>
+
+          <div class="avancado">
+            <div class="duas-colunas">
+              <div class="campo">
+                <label for="encargos">Seguros e taxas</label>
+                <div class="entrada-moeda"><span>R$</span><input id="encargos" type="text" inputmode="decimal" autocomplete="off" value="0" aria-describedby="encargos-ajuda"></div>
+              </div>
+              <div class="campo">
+                <label for="extra">Extra por mês</label>
+                <div class="entrada-moeda"><span>R$</span><input id="extra" type="text" inputmode="decimal" autocomplete="off" value="0" aria-describedby="extra-ajuda"></div>
+              </div>
+            </div>
+            <p id="encargos-ajuda">Seguros e taxas: valor mensal somado à parcela (MIP, DFI, tarifa).</p>
+            <p id="extra-ajuda">Extra por mês: amortização a mais todo mês, que encurta o prazo.</p>
+          </div>
+
+          <ul id="erros" class="erros" role="alert" hidden></ul>
+        </form>
+
+        <div class="painel palco">
+          <div id="cena" class="cena">
+            <div class="cena-topo">
+              <span class="sobrelinha">Seu imóvel em 3D</span>
+              <div class="legenda-cena" aria-label="Legenda das janelas">
+                <span><i class="i-entrada"></i>entrada</span>
+                <span><i class="i-paga"></i>já pago</span>
+                <span><i class="i-falta"></i>falta pagar</span>
+              </div>
+            </div>
+            <div id="rotulo-sac" class="rotulo s-sac">SAC <span class="rotulo-pct">–</span></div>
+            <div id="rotulo-price" class="rotulo s-price">Price <span class="rotulo-pct">–</span></div>
+            <div class="torres-2d" aria-hidden="true">
+              <div class="torre-2d"><div class="corpo" id="barra-sac"></div>SAC</div>
+              <div class="torre-2d"><div class="corpo" id="barra-price"></div>Price</div>
+            </div>
+            <p class="aviso-3d">A cena 3D não carregou neste navegador. Os cálculos funcionam normalmente.</p>
+          </div>
+
+          <div class="linha-tempo">
+            <div class="tempo-cabeca">
+              <button id="play" class="botao-play" type="button" aria-pressed="false">
+                <svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#1a1205" opacity=".15"/><path d="M10 8l6 4-6 4z" fill="currentColor"/></svg>
+                <svg class="ic-pausa" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#1a1205" opacity=".15"/><path d="M9 8h2v8H9zM13 8h2v8h-2z" fill="currentColor"/></svg>
+                <span>Ver o tempo passar</span>
+              </button>
+              <output id="tempo-saida" class="tempo-saida" for="tempo">Mês 120 · ano 10</output>
+            </div>
+            <input id="tempo" type="range" min="0" max="360" step="1" value="120" aria-label="Linha do tempo do financiamento, em meses">
+            <div class="leituras">
+              <div class="leitura" id="leitura-sac">
+                <span class="leitura-nome"><span class="ponto s-sac"></span>SAC</span>
+                <span class="leitura-pct">–</span>
+                <span class="leitura-saldo">–</span>
+              </div>
+              <div class="leitura" id="leitura-price">
+                <span class="leitura-nome"><span class="ponto s-price"></span>Price</span>
+                <span class="leitura-pct">–</span>
+                <span class="leitura-saldo">–</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="resultados">
+    <section class="secao" id="comparacao">
+      <div class="largura">
+        <div class="secao-cabeca">
+          <span class="sobrelinha">Comparação</span>
+          <h2 class="titulo-secao">SAC ou Price?</h2>
+          <p>Os dois sistemas pagam o mesmo valor financiado. O que muda é o ritmo: quanto de cada parcela vai para os juros e quanto abate a dívida.</p>
+        </div>
+
+        <div class="painel veredito" aria-live="polite">
+          <p id="veredito">–</p>
+          <p id="veredito-detalhe"></p>
+          <p id="nota-extra" hidden></p>
+        </div>
+
+        <div class="cartoes">
+          <article class="painel cartao" id="card-sac">
+            <div class="cartao-cabeca">
+              <h3><span class="ponto s-sac"></span>SAC</h3>
+              <div class="selos"><span class="selo" id="selo-juros-sac" hidden>menos juros</span><span class="selo" id="selo-parcela-sac" hidden>parcela inicial menor</span></div>
+              <small>Sistema de Amortização Constante: a parcela cai todo mês.</small>
+            </div>
+            <dl class="metricas">
+              <div><dt>Primeira parcela</dt><dd data-v="primeira">–</dd></div>
+              <div><dt>Última parcela</dt><dd data-v="ultima">–</dd></div>
+              <div><dt>Total de juros</dt><dd data-v="juros">–</dd></div>
+              <div><dt>Total pago</dt><dd data-v="total">–</dd></div>
+              <div><dt>Quitação</dt><dd data-v="prazo">–</dd></div>
+              <div><dt>Renda mínima (30%)</dt><dd data-v="renda">–</dd></div>
+            </dl>
+          </article>
+          <article class="painel cartao" id="card-price">
+            <div class="cartao-cabeca">
+              <h3><span class="ponto s-price"></span>Price</h3>
+              <div class="selos"><span class="selo" id="selo-juros-price" hidden>menos juros</span><span class="selo" id="selo-parcela-price" hidden>parcela inicial menor</span></div>
+              <small>Tabela Price: a parcela é a mesma do começo ao fim.</small>
+            </div>
+            <dl class="metricas">
+              <div><dt>Primeira parcela</dt><dd data-v="primeira">–</dd></div>
+              <div><dt>Última parcela</dt><dd data-v="ultima">–</dd></div>
+              <div><dt>Total de juros</dt><dd data-v="juros">–</dd></div>
+              <div><dt>Total pago</dt><dd data-v="total">–</dd></div>
+              <div><dt>Quitação</dt><dd data-v="prazo">–</dd></div>
+              <div><dt>Renda mínima (30%)</dt><dd data-v="renda">–</dd></div>
+            </dl>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao" id="graficos">
+      <div class="largura">
+        <div class="secao-cabeca">
+          <span class="sobrelinha">Ao longo do tempo</span>
+          <h2 class="titulo-secao">Parcela e saldo devedor</h2>
+          <p>Passe o mouse (ou toque) nos gráficos para ver o valor de cada mês. A linha tracejada é o mês escolhido na linha do tempo.</p>
+        </div>
+        <div class="graficos">
+          <div class="painel grafico-cartao">
+            <header><h3>Parcela mês a mês</h3><div class="legenda"><span><i class="s-sac"></i>SAC</span><span><i class="s-price"></i>Price</span></div></header>
+            <div class="grafico" id="grafico-parcela"></div>
+          </div>
+          <div class="painel grafico-cartao">
+            <header><h3>Saldo devedor</h3><div class="legenda"><span><i class="s-sac"></i>SAC</span><span><i class="s-price"></i>Price</span></div></header>
+            <div class="grafico" id="grafico-saldo"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao" id="tabela-secao">
+      <div class="largura">
+        <div class="secao-cabeca">
+          <span class="sobrelinha">Tabela de amortização</span>
+          <h2 class="titulo-secao">Cada parcela, por dentro</h2>
+        </div>
+        <div class="painel">
+          <div class="tabela-barra">
+            <div class="segmentado" role="group" aria-label="Sistema">
+              <button type="button" data-sistema="SAC" aria-pressed="true">SAC</button>
+              <button type="button" data-sistema="PRICE" aria-pressed="false">Price</button>
+            </div>
+            <div class="segmentado" role="group" aria-label="Detalhe">
+              <button type="button" data-modo="ano" aria-pressed="true">Por ano</button>
+              <button type="button" data-modo="mes" aria-pressed="false">Mês a mês</button>
+            </div>
+            <button type="button" class="botao-sec" id="copiar">Copiar tabela</button>
+            <p id="copia-aviso" role="status"></p>
+          </div>
+          <div class="tabela-rolagem" tabindex="0" aria-label="Tabela de amortização">
+            <table id="tabela-el"><caption id="tabela-legenda"></caption></table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao" id="como-funciona">
+      <div class="largura">
+        <div class="secao-cabeca">
+          <span class="sobrelinha">Como funciona</span>
+          <h2 class="titulo-secao">A conta por trás</h2>
+        </div>
+        <div class="explica">
+          <article class="painel">
+            <h3><span class="ponto s-sac"></span>SAC</h3>
+            <p>A dívida é dividida em partes iguais. Os juros incidem sobre o saldo, que cai todo mês, então a parcela também cai.</p>
+            <div class="formula">amortização = valor financiado ÷ meses<br>parcela = amortização + saldo × i</div>
+          </article>
+          <article class="painel">
+            <h3><span class="ponto s-price"></span>Price</h3>
+            <p>A parcela é fixa. No começo, quase tudo vai para os juros; perto do fim, quase tudo abate a dívida.</p>
+            <div class="formula">parcela = PV × i ÷ (1 − (1 + i)<sup>−n</sup>)</div>
+          </article>
+          <article class="painel">
+            <h3>O que fica de fora</h3>
+            <ul>
+              <li>Taxa anual convertida para mensal: i = (1 + taxa)<sup>1/12</sup> − 1.</li>
+              <li>Não entram TR, seguros obrigatórios (MIP e DFI) e tarifas, a não ser o valor que você colocar em “Seguros e taxas”.</li>
+              <li>A renda mínima usa a regra comum de a parcela caber em 30% da renda.</li>
+              <li>Antes de assinar, peça ao banco o CET (Custo Efetivo Total).</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="rodape">
+  <div class="largura">
+    <p>Teto é uma simulação educativa, não uma proposta de crédito. Os valores reais dependem do banco, da TR, dos seguros e da sua análise de crédito.</p>
+    <p>Feito por Matheus Galvão · <a href="https://github.com/Matheus0811" target="_blank" rel="noopener">GitHub</a> · <a href="https://www.linkedin.com/in/matheus-galvao" target="_blank" rel="noopener">LinkedIn</a></p>
+  </div>
+</footer>
+
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
