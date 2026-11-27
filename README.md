@@ -2,6 +2,10 @@
 
 Simulador de financiamento imobiliário que compara **SAC** e **Price** lado a lado. As duas torres em 3D mostram quanto do imóvel já é seu: as janelas acendem conforme a dívida é paga.
 
+**Teste no ar:** https://matheus0811.github.io/teto/
+
+![Teto: duas torres em 3D, uma para o SAC e outra para a Price](og.png)
+
 ## O que ele faz
 
 - Calcula as duas tabelas mês a mês a partir do valor do imóvel, da entrada, do prazo (até 35 anos) e da taxa de juros anual
@@ -49,6 +53,7 @@ src/cena3d.js              cena Three.js com as duas torres
 src/grafico.js             gráfico de linhas em SVG com dica ao passar o mouse
 src/app.js                 liga formulário, cena, gráficos e tabela
 tests/financiamento.test.js
+ferramentas/video-demo.js  gera o vídeo de demonstração a partir da cena 3D real
 ```
 
 ## As contas
