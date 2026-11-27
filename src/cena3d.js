@@ -266,7 +266,8 @@ export function criarCena(container, { rotulos, reduzirMovimento = false } = {})
     torre.grupo.localToWorld(v);
     v.project(camera);
     const x = (v.x * 0.5 + 0.5) * container.clientWidth;
-    const y = (-v.y * 0.5 + 0.5) * container.clientHeight;
+    // nunca acima da legenda do topo da cena
+    const y = Math.max(88, (-v.y * 0.5 + 0.5) * container.clientHeight);
     rotulo.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
   }
 
