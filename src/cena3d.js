@@ -180,7 +180,7 @@ export function criarCena(container, { rotulos, reduzirMovimento = false } = {})
   cena.fog = new THREE.Fog(0x070b18, 13, 30);
 
   const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
-  const alvoCamera = new THREE.Vector3(0, 3.4, 0);
+  const alvoCamera = new THREE.Vector3(0, 3.7, 0);
 
   cena.add(new THREE.HemisphereLight(0x8fb4ff, 0x05070f, 0.7));
   const sol = new THREE.DirectionalLight(0xc8d6ff, 0.9);
@@ -248,7 +248,7 @@ export function criarCena(container, { rotulos, reduzirMovimento = false } = {})
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     const recuo = camera.aspect < 1.2 ? (1.2 - camera.aspect) * 13 : 0;
-    camera.position.set(0, 6.2 + recuo * 0.25, 15.5 + recuo);
+    camera.position.set(0, 6.6 + recuo * 0.25, 18.5 + recuo);
     camera.lookAt(alvoCamera);
     camera.updateProjectionMatrix();
   }
